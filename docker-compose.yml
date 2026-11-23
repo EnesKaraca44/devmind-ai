@@ -1,0 +1,25 @@
+services:
+  db:
+    # PostgreSQL 18 + pgvector eklentisi hazır gelen resmi imaj
+    image: pgvector/pgvector:pg18
+    container_name: devmind-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # host:konteyner. Yalnızca localhost'a açıyoruz, ağdan erişilemez.
+      - "127.0.0.1:${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      # Named volume: konteyner silinse de veri kalır.
+      # PG 18 imajında veri dizini /var/lib/postgresql altında sürüm klasörüne gider.
+      - devmind_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  devmind_pgdata:
