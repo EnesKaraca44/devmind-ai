@@ -13,5 +13,17 @@ def test_health_returns_ok():
     assert response.json() == {"status": "ok", "service": "devmind-backend"}
 
 
+def test_cors_allows_frontend_origin():
+    response = client.get("/api/v1/health", headers={"Origin": "http://localhost:3000"})
+
+    assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+def test_cors_blocks_unknown_origin():
+    response = client.get("/api/v1/health", headers={"Origin": "http://evil.example"})
+
+    assert "access-control-allow-origin" not in response.headers
+
+
 def test_unknown_route_returns_404():
     assert client.get("/api/v1/yok-boyle-bir-sey").status_code == 404
