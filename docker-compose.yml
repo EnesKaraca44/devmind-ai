@@ -28,10 +28,18 @@ services:
     environment:
       # Tarayıcıdaki frontend'in adresi: CORS izni buna verilir.
       CORS_ORIGINS: http://localhost:3001,http://127.0.0.1:3001
+      # Konteynerden konteynere bağlantı: host adı "db" (servis adı), port 5432 (konteynerin İÇ portu).
+      # Bilgisayardan 127.0.0.1:5433 ile bağlanırdık; konteyner içinde o adres geçersiz.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      STORAGE_DIR: /app/storage
+    volumes:
+      # Yüklenen dosyalar konteyner silinse de kalsın (veritabanı kayıtlarıyla tutarlı kalmaları için).
+      - devmind_storage:/app/storage
     ports:
       - "127.0.0.1:8000:8000"
-    # Not: API henüz veritabanını kullanmıyor; kullanmaya başlayınca
-    # depends_on (db healthy) ve DATABASE_URL (host adı "db") eklenecek.
+    depends_on:
+      db:
+        condition: service_healthy   # veritabanı HAZIR olana kadar API başlamasın
 
   web:
     build:
@@ -48,3 +56,4 @@ services:
 
 volumes:
   devmind_pgdata:
+  devmind_storage:

@@ -9,9 +9,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Kod en sona: sık değişen şey ne kadar sonda olursa build o kadar hızlı olur.
 COPY app ./app
+# Migration dosyaları: `alembic upgrade head` konteynerin içinden çalıştırılabilsin diye.
+COPY alembic.ini ./
+COPY migrations ./migrations
 
 # root olmayan kullanıcı: konteyner ele geçirilirse verilen yetki daha az olur.
-RUN useradd --create-home appuser
+# Yüklenen dosyaların yazılacağı klasörü bu kullanıcıya veriyoruz (volume ilk oluşturulurken
+# bu sahipliği miras alır; yoksa appuser yazamaz).
+RUN useradd --create-home appuser \
+    && mkdir /app/storage \
+    && chown appuser /app/storage
 USER appuser
 
 EXPOSE 8000
