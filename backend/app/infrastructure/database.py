@@ -1,3 +1,6 @@
+from collections.abc import Iterator
+from functools import lru_cache
+
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -34,3 +37,15 @@ def get_engine(url: str | None = None) -> Engine:
 def make_session_factory(engine: Engine) -> sessionmaker[Session]:
     # Session = "iş birimi": birkaç değişikliği biriktirir, commit ile hepsini birden yazar.
     return sessionmaker(bind=engine, expire_on_commit=False)
+
+
+@lru_cache(maxsize=1)
+def _default_session_factory() -> sessionmaker[Session]:
+    # Engine (bağlantı havuzu) PAHALIDIR: uygulama boyunca BİR kez oluşturulur, her istek paylaşır.
+    return make_session_factory(get_engine())
+
+
+def get_session() -> Iterator[Session]:
+    """FastAPI bağımlılığı: her istek için bir oturum açar, istek bitince kapatır."""
+    with _default_session_factory()() as session:
+        yield session

@@ -3,6 +3,9 @@ import os
 # Yüklenebilecek en büyük dosya (byte). Varsayılan 20 MB; MAX_UPLOAD_BYTES ile değiştirilir.
 MAX_UPLOAD_BYTES: int = int(os.getenv("MAX_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 
+# Yüklenen dosyaların saklanacağı klasör (Git'e girmez, .gitignore'da "storage/").
+STORAGE_DIR: str = os.getenv("STORAGE_DIR", "storage")
+
 # Veritabanı bağlantı adresi. Parola içerdiği için KODA YAZILMAZ; ortam değişkeninden gelir.
 # Konteyner içinden:      postgresql+psycopg://KULLANICI:PAROLA@db:5432/ad        (servis adı "db")
 # Kendi bilgisayarından:  postgresql+psycopg://KULLANICI:PAROLA@127.0.0.1:5433/ad (yayınlanan port;

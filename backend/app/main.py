@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health
+from app.api.routes import collections, documents, health
 from app.core.config import CORS_ORIGINS
 
 app = FastAPI(title="DevMind AI API", version="0.1.0")
@@ -17,3 +17,5 @@ app.add_middleware(
 
 # Tüm route'ları /api/v1 önekiyle takıyoruz: gelecekte v2 çıkarsa v1 bozulmaz.
 app.include_router(health.router, prefix="/api/v1")
+app.include_router(collections.router, prefix="/api/v1")
+app.include_router(documents.router, prefix="/api/v1")

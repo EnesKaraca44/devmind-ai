@@ -45,6 +45,23 @@ Veriyi de silmek için: `docker compose down -v` (**geri alınamaz**).
 
 > Not: Web 3001'de çünkü bazı makinelerde 3000'i başka uygulamalar tutuyor.
 
+## API (doküman yükleme)
+
+| Metot | Adres | Açıklama |
+|---|---|---|
+| POST | `/api/v1/collections` | Koleksiyon oluştur (`{"name": "..."}`) |
+| GET | `/api/v1/collections`, `/{id}` | Listele / getir |
+| POST | `/api/v1/documents/upload` | Dosya yükle (form: `collection_id`, `file`). PDF, TXT, MD; en fazla 20 MB |
+| GET | `/api/v1/documents?collection_id=` | Listele |
+| GET / DELETE | `/api/v1/documents/{id}` | Getir / sil (kayıt ve dosya) |
+
+Yükleme sonuçları: `201` başarılı, `400` geçersiz dosya, `404` koleksiyon yok, `409` aynı dosya zaten var, `413` çok büyük.
+Okunamayan ama geçerli görünen dosya (ör. taranmış PDF) `201` ile kaydedilir ve `status: failed` + `error_message` taşır.
+
+Ayarlar (ortam değişkeni): `MAX_UPLOAD_BYTES` (varsayılan 20 MB), `STORAGE_DIR` (varsayılan `storage`), `DATABASE_URL`, `CORS_ORIGINS`.
+
+> Henüz yalnızca yerelde (konteyner dışında) çalıştırılıyor; Docker Compose'a bağlama sıradaki adım (2.5b).
+
 ## Testler
 
 ### Backend

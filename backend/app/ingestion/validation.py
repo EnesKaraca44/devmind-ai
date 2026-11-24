@@ -30,6 +30,10 @@ class UploadValidationError(Exception):
     """Yükleme reddedildi. Mesaj kullanıcıya gösterilebilir (dosya içeriği içermez)."""
 
 
+class FileTooLargeError(UploadValidationError):
+    """Boyut sınırı aşıldı. Ayrı sınıf: API bunu 400 yerine 413 (Payload Too Large) olarak döner."""
+
+
 @dataclass(frozen=True)
 class ValidatedUpload:
     display_name: str  # Temizlenmiş orijinal ad: sadece ETİKET, diske yazılmaz
@@ -90,7 +94,7 @@ def validate_upload(raw_name: str, data: bytes) -> ValidatedUpload:
         raise UploadValidationError("Dosya boş.")
     if len(data) > MAX_UPLOAD_BYTES:
         limit_mb = MAX_UPLOAD_BYTES // (1024 * 1024)
-        raise UploadValidationError(f"Dosya çok büyük (en fazla {limit_mb} MB).")
+        raise FileTooLargeError(f"Dosya çok büyük (en fazla {limit_mb} MB).")
 
     _check_content_matches_extension(extension, data)
 
