@@ -5,13 +5,13 @@ Yol haritası ve çalışma kuralları: [`DevMind_AI_Codex_Master_Prompt.md`](De
 
 ## Durum
 
-Sprint 1 (Foundation) büyük ölçüde tamam. Çalışan kısımlar:
+Sprint 1 (Foundation) tamam, Sprint 2 (Doküman yükleme) tamamlanmak üzere. Çalışan kısımlar:
 
-- PostgreSQL 18 + pgvector (Docker)
-- FastAPI backend, tek endpoint: `GET /api/v1/health`
-- Next.js frontend, backend'e istek atıp durumu gösteren tek sayfa
+- PostgreSQL 18 + pgvector (Docker), Alembic migration'ları
+- FastAPI backend: koleksiyonlar ve doküman yükleme/listeleme/silme (PDF, TXT, Markdown)
+- Next.js arayüzü: koleksiyon oluşturma, dosya yükleme, doküman listesi, silme
 
-**Henüz yok:** doküman yükleme, chunking, embedding, arama, RAG, agent, MCP (Sprint 2 ve sonrası).
+**Henüz yok:** chunking, embedding, arama, RAG, agent, MCP, kimlik doğrulama (Sprint 3 ve sonrası).
 
 ## Gereksinimler
 
@@ -29,7 +29,11 @@ Copy-Item .env.example .env
 # 2) Tüm servisleri derle ve başlat
 docker compose up -d --build
 
-# 3) Durumu gör
+# 3) Veritabanı tablolarını oluştur (İLK KURULUMDA ve her yeni migration'dan sonra şart;
+#    yapılmazsa tablo yokken API 500 döner)
+docker compose exec api alembic upgrade head
+
+# 4) Durumu gör
 docker compose ps
 ```
 
@@ -40,8 +44,8 @@ docker compose ps
 | API dokümanı | http://localhost:8000/docs | FastAPI'nin otomatik ürettiği sayfa |
 | PostgreSQL | `localhost:5433` | Host'taki PostgreSQL'le çakışmasın diye 5433 |
 
-Durdurmak için: `docker compose down` (veri `devmind_pgdata` volume'ünde kalır).
-Veriyi de silmek için: `docker compose down -v` (**geri alınamaz**).
+Durdurmak için: `docker compose down` (veritabanı `devmind_pgdata`, yüklenen dosyalar `devmind_storage` volume'ünde kalır).
+Her şeyi silmek için: `docker compose down -v` (**veritabanı ve yüklenen dosyalar geri alınamaz şekilde silinir**).
 
 > Not: Web 3001'de çünkü bazı makinelerde 3000'i başka uygulamalar tutuyor.
 
@@ -59,8 +63,6 @@ Yükleme sonuçları: `201` başarılı, `400` geçersiz dosya, `404` koleksiyon
 Okunamayan ama geçerli görünen dosya (ör. taranmış PDF) `201` ile kaydedilir ve `status: failed` + `error_message` taşır.
 
 Ayarlar (ortam değişkeni): `MAX_UPLOAD_BYTES` (varsayılan 20 MB), `STORAGE_DIR` (varsayılan `storage`), `DATABASE_URL`, `CORS_ORIGINS`.
-
-> Henüz yalnızca yerelde (konteyner dışında) çalıştırılıyor; Docker Compose'a bağlama sıradaki adım (2.5b).
 
 ## Testler
 
