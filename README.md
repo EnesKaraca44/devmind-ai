@@ -56,6 +56,22 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
+### Veritabanı şeması (migration)
+
+Veritabanı çalışırken (`docker compose up -d`), `backend` klasöründe:
+
+```powershell
+. ..\scripts\dev-env.ps1                      # DATABASE_URL'i .env'den üretir (parola gösterilmez)
+.\.venv\Scripts\alembic.exe upgrade head      # şemayı en son sürüme getirir
+.\.venv\Scripts\alembic.exe current           # şu anki sürüm
+.\.venv\Scripts\alembic.exe downgrade base    # her şeyi geri alır (tablolar silinir!)
+.\.venv\Scripts\alembic.exe check             # modeller ile veritabanı arasında fark var mı?
+```
+
+`DATABASE_URL` tanımlıysa veritabanı entegrasyon testleri de çalışır (her test sonunda geri alınır, veri bırakmaz); tanımlı değilse atlanır.
+
+> Bağlantıda `localhost` yerine `127.0.0.1` kullanılır: `localhost` önce IPv6'ya (`::1`) çözülür, Docker portu yalnızca IPv4'e açtığı için her bağlantı saniyelerce takılırdı.
+
 ### Frontend
 
 ```powershell
