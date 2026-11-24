@@ -21,5 +21,30 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build: ./backend          # Dockerfile'dan imaj üretir
+    container_name: devmind-api
+    restart: unless-stopped
+    environment:
+      # Tarayıcıdaki frontend'in adresi: CORS izni buna verilir.
+      CORS_ORIGINS: http://localhost:3001,http://127.0.0.1:3001
+    ports:
+      - "127.0.0.1:8000:8000"
+    # Not: API henüz veritabanını kullanmıyor; kullanmaya başlayınca
+    # depends_on (db healthy) ve DATABASE_URL (host adı "db") eklenecek.
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: devmind-web
+    restart: unless-stopped
+    ports:
+      # Host'ta 3000'i başka bir uygulama tutabiliyor; bu yüzden 3001.
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - api
+
 volumes:
   devmind_pgdata:
