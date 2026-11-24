@@ -12,10 +12,13 @@ class ParsedDocument:
     """Her parser'ın aynı biçimde döndürdüğü sonuç."""
 
     text: str
-    # Hangi kodlamayla okuduk? Hata ayıklarken ve kullanıcıya bilgi verirken lazım.
-    encoding: str
+    # Hangi kodlamayla okuduk? Yalnızca metin dosyaları için anlamlı (PDF'te None).
+    encoding: str | None = None
     # Sorun sayılmayan ama bilinmesi gereken şeyler (ör. "kodlama tahmin edildi").
     warnings: list[str] = field(default_factory=list)
+    # Sayfa sayfa metin (yalnızca PDF gibi sayfalı formatlar). pages[0] = 1. sayfa.
+    # Kaynak gösterirken "12. sayfa" diyebilmek için gerekir; sayfası olmayan formatlarda None.
+    pages: list[str] | None = None
 
 
 class Parser(Protocol):
