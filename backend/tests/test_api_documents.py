@@ -110,6 +110,20 @@ def test_upload_text_file(client, storage_dir):
     assert len(stored_files(storage_dir)) == 1
 
 
+def test_upload_markdown_file(client, storage_dir):
+    collection_id = new_collection(client)
+    markdown = "# Başlık\n\n- madde **kalın**\n".encode("utf-8")
+
+    response = upload(client, collection_id, "notlar.md", markdown)
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["status"] == "ready"
+    assert body["mime_type"] == "text/markdown"
+    assert body["page_count"] is None  # Markdown'da sayfa kavramı yok
+    assert stored_files(storage_dir)[0].endswith(".md")
+
+
 def test_upload_pdf_reports_page_count(client):
     collection_id = new_collection(client)
     pdf = make_pdf([[(72, 700, "Page one")], [(72, 700, "Page two")]])
