@@ -16,25 +16,16 @@ class PdfParser:
 
     def parse(self, data: bytes) -> ParsedDocument:
         try:
-            reader = PdfReader(BytesIO(data))
-        except (PyPdfError, ValueError, OSError):
-            # Hata ayrıntısını (içerik parçası içerebilir) kullanıcıya/loga taşımıyoruz.
-            raise ParserError("Geçerli bir PDF dosyası değil ya da bozuk.") from None
-
-        if reader.is_encrypted:
-            # Parola gerekmeden açılabiliyorsa (boş parola) devam, değilse reddet.
-            try:
-                if not reader.decrypt(""):
-                    raise ParserError("PDF parola korumalı.")
-            except PyPdfError:
-                raise ParserError("PDF parola korumalı.") from None
-
-        pages: list[str] = []
-        try:
-            for page in reader.pages:
-                pages.append((page.extract_text() or "").strip())
-        except (PyPdfError, ValueError, KeyError, OSError):
-            raise ParserError("PDF içeriği okunamadı.") from None
+            pages = self._extract_pages(data)
+        except ParserError:
+            raise
+        except Exception:
+            # Kullanıcıdan gelen PDF GÜVENİLMEZ girdidir ve üçüncü parti kütüphane çok çeşitli
+            # hatalar fırlatabilir (hata sınıfları tek bir ata sınıftan türemeyebilir: gerçek bir
+            # PDF'te DependencyError PyPdfError'ın alt sınıfı çıkmadı ve API 500 verecekti).
+            # Bu yüzden dışarıya yalnızca ParserError sızar. İç ayrıntıyı (dosya içeriği
+            # barındırabilir) mesaja KOYMAYIZ.
+            raise ParserError("PDF okunamadı (bozuk ya da desteklenmeyen bir PDF).") from None
 
         if not any(pages):
             # Metin yok: büyük ihtimalle taranmış (resim) PDF. OCR ileride düşünülecek.
@@ -54,3 +45,17 @@ class PdfParser:
             pages=pages,
             warnings=warnings,
         )
+
+    def _extract_pages(self, data: bytes) -> list[str]:
+        try:
+            reader = PdfReader(BytesIO(data))
+        except PyPdfError:
+            raise ParserError("Geçerli bir PDF dosyası değil ya da bozuk.") from None
+
+        if reader.is_encrypted:
+            # Çoğu "şifreli" PDF yalnızca izinleri kısıtlar ve BOŞ kullanıcı parolasıyla açılır.
+            # Gerçekten parola isteyenleri reddederiz.
+            if not reader.decrypt(""):
+                raise ParserError("PDF parola korumalı.")
+
+        return [(page.extract_text() or "").strip() for page in reader.pages]

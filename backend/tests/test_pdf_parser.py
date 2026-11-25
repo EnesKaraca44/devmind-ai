@@ -64,6 +64,55 @@ def test_rejects_password_protected_pdf():
     assert "parola" in str(error.value)
 
 
+def _encrypted(user_password: str, algorithm: str) -> bytes:
+    writer = PdfWriter()
+    for page in PdfReader(BytesIO(make_pdf([[(72, 700, "Secret text")]]))).pages:
+        writer.add_page(page)
+    # owner_password: izinleri (yazdırma, kopyalama) kısıtlayan "sahip parolası";
+    # user_password: DOSYAYI AÇMAK için gereken parola ("" = parolasız açılır).
+    writer.encrypt(user_password, owner_password="sahip-parolasi", algorithm=algorithm)
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+@pytest.mark.parametrize("algorithm", ["RC4-128", "AES-128", "AES-256"])
+def test_reads_pdf_encrypted_with_empty_user_password(algorithm):
+    # Gerçek dünyada ÇOK yaygın: PDF "şifreli" ama herkes parolasız açabilir (yalnızca
+    # kopyalama/yazdırma kısıtlı). AES varyantları için `cryptography` kütüphanesi gerekir;
+    # gerçek bir ders notu PDF'i bu eksiği ortaya çıkardı.
+    result = parser.parse(_encrypted("", algorithm))
+
+    assert result.pages == ["Secret text"]
+
+
+@pytest.mark.parametrize("algorithm", ["RC4-128", "AES-128", "AES-256"])
+def test_rejects_pdf_that_really_needs_a_user_password(algorithm):
+    with pytest.raises(ParserError) as error:
+        parser.parse(_encrypted("gercek-parola", algorithm))
+
+    assert "parola" in str(error.value)
+
+
+def test_unexpected_library_error_becomes_parser_error(monkeypatch):
+    # Üçüncü parti kütüphane hangi türde hata fırlatırsa fırlatsın (sınıf hiyerarşisini
+    # bilemeyiz), dışarıya yalnızca ParserError sızmalı; yoksa API 500 döner.
+    import app.ingestion.parsers.pdf as pdf_module
+
+    class Boom(Exception):
+        pass
+
+    def broken_reader(*args, **kwargs):
+        raise Boom("kutuphanenin ic hatasi GIZLI-DETAY")
+
+    monkeypatch.setattr(pdf_module, "PdfReader", broken_reader)
+
+    with pytest.raises(ParserError) as error:
+        parser.parse(make_pdf([[(72, 700, "x")]]))
+
+    assert "GIZLI" not in str(error.value)  # iç ayrıntı sızmaz
+
+
 def test_known_limitation_text_follows_drawing_order_not_reading_order():
     # Bilinen sınır (hata değil): PDF'te "okuma sırası" yok, yalnızca çizim sırası ve koordinat var.
     # Ekranda 1-2-3 görünen satırlar, çizim sırasıyla 3-1-2 çıkar. Bu testi, davranışı
